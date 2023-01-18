@@ -2,63 +2,78 @@ package sorting
 
 import java.lang.RuntimeException
 
+class SortingTool(private val sortingType: String = "natural", val dataType: String = "word") {
+    private val list = mutableListOf<String>()
+
+    init {
+        while (true) {
+            try {
+                list.add(readln())
+            } catch (e: RuntimeException) {
+                break
+            }
+        }
+    }
+    //Sorting values by themselves and by amount of them
+    private fun sortByCount(list: List<Any>): Map<Any, Int> {
+        return list.groupingBy { it }.eachCount().toList().sortedBy { (key, _) -> key as Comparable<Any> }
+            .sortedBy { (_, value) -> value }.toMap()
+    }
+    //Sorting values in list (in this project Int and String)
+    private fun sortByNatural(list: List<Any>): List<Any> {
+        return list.sortedBy { value -> value as Comparable<Any> }
+    }
+    //Sorting depending on arguments provided, default as natural and word
+    fun run() {
+        val data = when (dataType) {
+            "word" -> {
+                val words = mutableListOf<String>()
+                list.forEach { words.addAll(it.split("""\s+""".toRegex())) }
+                println("Total words: ${words.size}.")
+                words
+            }
+
+            "long" -> {
+                val numbers = mutableListOf<Int>()
+                list.forEach { numbers.addAll(it.split(" ").filter { it != "" }.map { it.toInt() }) }
+                println("Total numbers: ${numbers.size}.")
+                numbers
+            }
+
+            else -> {
+                println("Total lines: ${list.size}.")
+                list
+            }
+        }
+
+        when (sortingType) {
+            "byCount" -> {
+                val sorted = sortByCount(data)
+                val numbersCount = sorted.values.sum()
+                sorted.forEach { println("${it.key}: ${it.value} time(s), ${it.value * 100 / numbersCount}%") }
+            }
+
+            "natural" -> {
+                val sorted = sortByNatural(data)
+                println(
+                    if (dataType == "line") {
+                        sorted.joinToString("\n")
+                    } else {
+                        sorted.joinToString(" ")
+                    }
+                )
+            }
+        }
+    }
+}
+
 fun main(args: Array<String>) {
-    val list = mutableListOf<String>()
-    while (true) {
-        try {
-            list.add(readln())
-        } catch (e: RuntimeException) {
-            break
-        }
+    val sort = when {
+        args.isEmpty() -> SortingTool()
+        args.size == 2 && args.first() == "-sortingType" -> SortingTool(args[1])
+        args.size == 2 && args.first() == "-dataType" -> SortingTool(dataType = args[1])
+        else -> SortingTool(args[args.indexOf("-sortingType") + 1], args[args.indexOf("-dataType") + 1])
     }
 
-    var type = args.firstOrNull()
-
-    type = when {
-        type == null -> "word"
-        type == "-sortIntegers" -> "-sortIntegers"
-        args.size > 2 && args[2] == "-sortIntegers" -> "-sortIntegers"
-        else -> args[1]
-    }
-
-    when (type) {
-        "long" -> {
-            val numbers = mutableListOf<Int>()
-            list.forEach { numbers.addAll(it.split(" ".toRegex()).filter { it != "" }.map { it.toInt() }) }
-            val maxElement = numbers.maxOf { it }
-            println("Total numbers: ${numbers.size}.")
-            val maxElementCount = numbers.count { it == maxElement }
-            println(
-                "The greatest number: $maxElement ($maxElementCount time(s), ${maxElementCount * 100 / numbers.size}%)."
-            )
-        }
-
-        "line" -> {
-            val maxElement = list.maxByOrNull { it.length }
-            val maxElementCount = list.count { it == maxElement }
-            println("Total lines: ${list.size}")
-            println(
-                "The longest line: \n${maxElement}\n($maxElementCount time(s), ${maxElementCount * 100 / list.size}%)."
-            )
-        }
-
-        "word" -> {
-            val words = mutableListOf<String>()
-            list.forEach { words.addAll(it.split("""\s+""".toRegex())) }
-            val maxElement = words.maxByOrNull { it.length }
-            val maxElementCount = words.count { it == maxElement }
-            println("Total words: ${words.size}")
-            println(
-                "The longest word: $maxElement ($maxElementCount time(s), ${maxElementCount * 100 / words.size}%)."
-            )
-        }
-
-        "-sortIntegers" -> {
-            val numbers = mutableListOf<Int>()
-            list.forEach { numbers.addAll(it.split(" ".toRegex()).filter { it != "" }.map { it.toInt() }) }
-            println("Total numbers: ${numbers.size}.")
-            println("Sorted data: ${numbers.sorted().joinToString(" ")}")
-        }
-    }
-
+    sort.apply { run() }
 }
